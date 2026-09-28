@@ -1,22 +1,30 @@
 public class Main {
-    public static void main(String[] args) {
-        QueueInterface<Message> queue = new LinkedQueue<>();
 
-        Message message1 = new Message("001", "Order received");
-        Message message2 = new Message("002", "Payment received");
-        Message message3 = new Message("003", "Order shipped");
+    public static void main(String[] args) {
 
         try {
-            queue.enqueue(message1);
-            queue.enqueue(message2);
-            queue.enqueue(message3);
+            Broker broker = new Broker();
 
-            System.out.println("Dequeuing messages:");
+            Message message1 =
+                    new Message("001", "Order received", 100);
 
-            while (!queue.isEmpty()) {
-                Message message = queue.dequeue();
-                System.out.println(message);
-            }
+            Message message2 =
+                    new Message("002", "Payment processing", 50);
+
+            Message message3 =
+                    new Message("003", "Shipping request", 25);
+
+            Message message4 =
+                    new Message("004", "Customer notification", 75);
+
+            broker.enqueue(message1);
+            broker.enqueue(message2);
+            broker.enqueue(message3);
+            broker.enqueue(message4);
+
+            System.out.println("=== Processing Batch ===");
+
+            broker.processBatch();
 
         } catch (QueueOverflowException | QueueUnderflowException e) {
             System.out.println("Queue error: " + e.getMessage());
