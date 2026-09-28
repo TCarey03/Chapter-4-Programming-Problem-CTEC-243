@@ -2,11 +2,15 @@ import java.util.Random;
 
 public class Broker {
 
+    private static final int MAX_RETRIES = 3;
+
     private QueueInterface<Message> queue;
+    private QueueInterface<Message> deadLetterQueue;
     private Random random;
 
     public Broker() {
         queue = new LinkedQueue<>();
+        deadLetterQueue = new LinkedQueue<>();
         random = new Random();
     }
 
@@ -14,13 +18,10 @@ public class Broker {
         queue.enqueue(message);
     }
 
-    public void processBatch() throws QueueUnderflowException, QueueOverflowException {
+    public void processBatch()
+            throws QueueUnderflowException, QueueOverflowException {
 
-        // Remember how many messages are currently in the queue
-        int batchSize = queue.size();
-
-        // Only process the messages that were originally in the queue
-        for (int i = 0; i < batchSize; i++) {
+        while (!queue.isEmpty()) {
 
             Message message = queue.dequeue();
 
@@ -34,10 +35,42 @@ public class Broker {
 
                 message.incrementRetryCount();
 
-                queue.enqueue(message);
+                if (message.getRetryCount() >= MAX_RETRIES) {
 
-                System.out.println("FAILED - Re-enqueued: " + message);
+                    deadLetterQueue.enqueue(message);
+
+                    System.out.println(
+                            "FAILED - Moved to DLQ: " + message
+                    );
+
+                } else {
+
+                    queue.enqueue(message);
+
+                    System.out.println(
+                            "FAILED - Re-enqueued: " + message
+                    );
+                }
             }
         }
+    }
+    public void displayAndClearDLQ()
+            throws QueueUnderflowException {
+
+        System.out.println("\n=== Dead-Letter Queue ===");
+
+        if (deadLetterQueue.isEmpty()) {
+            System.out.println("DLQ is empty.");
+            return;
+        }
+
+        while (!deadLetterQueue.isEmpty()) {
+
+            Message message = deadLetterQueue.dequeue();
+
+            System.out.println(message);
+        }
+
+        System.out.println("DLQ has been cleared.");
     }
 }
