@@ -19,3 +19,18 @@ For example, if messages A, B, and C are in the queue and B fails, B is moved to
 This gives the other messages a chance to be processed instead of allowing one failing message to block the rest of the queue.
 
 I also used the queue size at the beginning of processBatch() so that the method only processes the original batch of messages. This prevents a message that keeps failing from causing an infinite loop.
+
+--------------------------
+
+Phase 3 Journal
+Dead-Letter Queue
+
+A poison message starts in the normal message queue. When the Broker processes it, the message has a chance to succeed. If it fails, its retry count is increased and it is placed back at the end of the main queue.
+
+If the message continues to fail and its retry count reaches the maximum of 3 retries, it is removed from the main queue and placed into the Dead-Letter Queue (DLQ).
+
+The message's retry count keeps increasing each time it fails. Its position also changes because failed messages are placed at the rear of the main queue. This allows other messages to be processed before the failed message is tried again.
+
+Once the message reaches the maximum retry limit, it is moved permanently to the DLQ instead of being re-enqueued. This prevents a poison message from blocking the system forever.
+
+The DLQ can be viewed through the menu. Viewing the DLQ also removes the messages from it because the messages are dequeued while they are displayed.
